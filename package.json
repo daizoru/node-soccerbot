@@ -1,0 +1,27 @@
+{
+  "name": "soccerbot",
+  "version": "0.0.0",
+  "description": "a soccer player bot",
+  "main": "soccerbot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/daizoru/node-soccerbot.git"
+  },
+  "keywords": [
+    "robocup",
+    "simspark",
+    "evolutionary robotics"
+  ],
+  "author": "Julian Bilcke <julian.bilcke@daizoru.com>",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "petri": "0.0.0",
+    "colors": "~0.6.0-1",
+    "evolve": "0.0.4",
+    "simspark": "0.0.5"
+  }
+}
