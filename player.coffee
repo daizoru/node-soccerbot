@@ -7,16 +7,18 @@ module.exports = (options={}) ->
   source = @source
 
   SimSpark             = require 'simspark'
-  {repeat,wait}        = require 'ragtime'
   {mutable, clone}     = require 'evolve'
-  substrate            = require 'substrate'
+  petri                = require 'petri'
  
-  {P, copy, pretty, round2, round3, randInt}    = substrate.common
+  {P, copy, pretty, round2, round3, randInt}    = petri.common
+
+  repeat = (t,f) -> setInterval f, t
+  wait  = (t) -> (f) -> setInterval f, t
 
   # Errors have a cost, and impact the motivation of the player
   # a player not motivated might declare forfeit the game -> death!
   motivation = 10000
-  ERR = substrate.errors (value, msg) -> motivation -= value ; msg
+  ERR = petri.errors (value, msg) -> motivation -= value ; msg
 
   #############
   # VARIABLES #
