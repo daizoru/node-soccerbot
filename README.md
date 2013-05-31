@@ -1,4 +1,6 @@
 node-soccerbot
 ==============
 
-Demo project based on node-substrate
+Demo project
+
+
