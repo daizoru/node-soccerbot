@@ -14,7 +14,7 @@ log = console.log
 # WARNING all workers will execute code which is outside Petri callback
 Petri ->
 
-  main = -> 
+  main = => 
 
     log "Spawning team members.."
     # storage for trading models
@@ -23,7 +23,8 @@ Petri ->
     playing = 0
 
     # Initialization of the team
-    @spawn() for i in [0...config.players]
+    for i in [0...1]
+      @spawn()
 
     @on 'exit', =>
       log "Player exited"
@@ -35,9 +36,6 @@ Petri ->
       onComplete
         src: pick team                   # pick a random program
         scene: 'rsg/agent/nao/nao.rsg'   # robot model
-        server:
-          host: 'localhost'
-          port: 3100
         score: 0                         # default individual score
         team  : 'Daizoru'                # soccer team / side
         number: playing++                # soccer player number
@@ -76,13 +74,13 @@ Petri ->
     server.on 'close', (code, signal) -> log "rcssserver3D: exited"
     server.stdin.end()
 
-  log "Checking is SimSpark is running.."
+  log "Checking if SimSpark is running.."
   psaux = execSync.exec('ps aux | grep rcssserver3d | grep -v grep | wc -l; exit 1');
   instances = ((Number) psaux.stdout) 
   if instances is 0
     log "SimSpark is not running, starting it.."
     startSimSpark (server) ->
-      log "simspark is started, connecting to it.."
+      log "simspark is now started, connecting to it.."
       main()
   else
     log "SimSpark is already running, connecting to it.."

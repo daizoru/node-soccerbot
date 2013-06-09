@@ -8,10 +8,10 @@ module.exports = (options={}) ->
 
   {mutable, clone} = require 'evolve'
   petri            = require 'petri'
-  {Petri, common} = petri
+  {common} = petri
   {P, copy, pretty, round2, round3, randInt, every, after} = common
 
-  SimSpark         = require 'simspark'
+  simspark         = require 'simspark'
 
   # Errors have a cost, and impact the motivation of the player
   # a player not motivated might declare forfeit the game -> death!
@@ -60,7 +60,7 @@ module.exports = (options={}) ->
 
 
   warn "connecting to the game server.."
-  sim = new SimSpark()
+  sim = new simspark.Agent()
 
   sim.on 'close', ->  
     state = 'disconnected'
