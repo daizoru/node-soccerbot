@@ -19,10 +19,12 @@
   "license": "BSD",
   "readmeFilename": "README.md",
   "dependencies": {
+    "coffee-script": "1.6.x",
     "petri": "0.0.0",
     "colors": "~0.6.0-1",
     "evolve": "0.0.4",
     "simspark": "0.0.5",
-    "eyes": "~0.1.8"
+    "eyes": "~0.1.8",
+    "execSync": "0.0.4"
   }
 }

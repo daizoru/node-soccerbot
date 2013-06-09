@@ -2,18 +2,16 @@
 
 module.exports = (options={}) ->
 
-  {failure, alert, success, info, debug}  = @logger
+  {failure, warn, success, info, debug}  = @logger
   emit = @emit
   source = @source
 
-  SimSpark             = require 'simspark'
-  {mutable, clone}     = require 'evolve'
-  petri                = require 'petri'
- 
-  {P, copy, pretty, round2, round3, randInt}    = petri.common
+  {mutable, clone} = require 'evolve'
+  petri            = require 'petri'
+  {Petri, common} = petri
+  {P, copy, pretty, round2, round3, randInt, every, after} = common
 
-  repeat = (t,f) -> setInterval f, t
-  wait  = (t) -> (f) -> setInterval f, t
+  SimSpark         = require 'simspark'
 
   # Errors have a cost, and impact the motivation of the player
   # a player not motivated might declare forfeit the game -> death!
@@ -23,28 +21,28 @@ module.exports = (options={}) ->
   #############
   # VARIABLES #
   #############
-  number = options.game.number ? 0
-  team   = options.game.team
+  number = options.number ? 0
+  team   = options.team
   side   = 'Left'
   state = 'connecting'
   playmode = ''
   t = 0
 
-  alert "connecting to the game server.."
+  warn "connecting to the game server.."
   sim = new SimSpark()
 
   sim.on 'close', ->  
     state = 'disconnected'
   
   sim.on 'error', (er) ->
-    alert "simspark error: " + pretty er
+    warn "simspark error: " + pretty er
     state = 'disconnected'
 
   sim.on 'connect', ->
     state = 'waiting'
-    alert "connected! preparing the scene.."
+    warn "connected! preparing the scene.."
     sim.send [
-      [ "scene", options.game.scene ]
+      [ "scene", options.scene ]
       [ "init", [[ "unum", number ],[ "teamname", team ]]]
     ]
 
@@ -75,7 +73,7 @@ module.exports = (options={}) ->
           when 't'  then t = nfo[1]
           when 'pm' then playmode = nfo[1]
           else
-            alert "unknow GS attribute: " + pretty nfo
+            warn "unknow GS attribute: " + pretty nfo
 
     sim.on 'time', (args) ->
       # timestamp
@@ -130,7 +128,7 @@ module.exports = (options={}) ->
       buffer[21]  = mutable   0.8 * Math.random() + 0.05 * Math.cos t
 
     reproduce = (onComplete) -> process.nextTick ->
-      alert "reproducing"
+      warn "reproducing"
       clone 
         src       : source
         ratio     : 0.80 # Math.min 0.60, mutable 0.40
@@ -141,7 +139,7 @@ module.exports = (options={}) ->
           wait(1)(onComplete) if onComplete?
 
     exit = (code=0) -> process.nextTick ->
-      alert 'exiting..'
+      warn 'exiting..'
       #simspark.close()
       emit die: code
       wait(300) -> process.exit code
@@ -149,15 +147,16 @@ module.exports = (options={}) ->
     #############
     # MAIN LOOP #
     #############
+
     step = 0
-    do looper = ->
+    do iterate = ->
 
       # http://simspark.sourceforge.net/wiki/index.php/Play_Modes
   
       switch playmode
         when 'BeforeKickOff'
           debug "Before Kick Off"
-          alert "scene ready! waiting for kick off.."
+          warn "scene ready! waiting for kick off.."
 
         when 'KickOff_Left'
           debug "Kick Off Left"
@@ -215,14 +214,14 @@ module.exports = (options={}) ->
           #if flushed.length
           #  debug "flushed: " + pretty flushed
 
-          if step is Math.round options.maxIterations * 0.5
+          if step is 40
             do reproduce
 
-          if step is options.maxIterations
+          if step is 80
             state = 'ended'
 
         when 'connecting'
-          alert "connecting to the server.."
+          warn "connecting to the server.."
 
         when 'waiting'
           debug "waiting for the scene to be installed.."
@@ -241,6 +240,4 @@ module.exports = (options={}) ->
             state = 'exit'
             do exit
       
-      wait(options.engine.updateInterval) looper
-
-  {}
+      after 500.ms iterate
