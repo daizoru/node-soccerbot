@@ -61,7 +61,7 @@ module.exports = (options={}) ->
         continue if buffer[i] is alreadySet[i]
         # if value changed, we updated SPEEDS and sned an update message
         alreadySet[i] = buffer[i]
-        [ options.robot.effectors[i], buffer[i] ]
+        [ robot.effectors[i], buffer[i] ]
       buffer = []
       sim.send batch
       batch
