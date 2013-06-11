@@ -4,8 +4,9 @@ module.exports = (options={}) ->
 
   {failure, warn, success, info, debug}  = @logger
   emit = @emit
-  source = @source
+  src = @src
 
+  #console.log "src: #{src}"
   {mutable, clone} = require 'evolve'
   petri            = require 'petri'
   {common} = petri
@@ -59,7 +60,7 @@ module.exports = (options={}) ->
 
 
 
-  warn "connecting to the game server.."
+  warn "connecting.."
   sim = new simspark.Agent()
 
   sim.on 'close', ->  
@@ -71,7 +72,7 @@ module.exports = (options={}) ->
 
   sim.on 'connect', ->
     state = 'waiting'
-    warn "connected! preparing the scene.."
+    success "connected to server"
     sim.send [
       [ "scene", options.scene ]
       [ "init", [[ "unum", number ],[ "teamname", team ]]]
@@ -112,17 +113,17 @@ module.exports = (options={}) ->
     sim.on 'agentstate', (args) ->
       temperature = args[0][1]
       battery     = args[1][1]
-      debug "temperature: #{temperature}, battery: #{battery}"
+      #debug "temperature: #{temperature}, battery: #{battery}"
 
 
     sim.on 'frp', (args) ->
       #debug "Sensor: Force-resistance: " + pretty args
 
     sim.on 'gyr', (args) ->
-      debug "Sensor: Gyroscope: " + pretty args
+      #debug "Sensor: Gyroscope: " + pretty args
 
     sim.on 'acc', (args) ->
-      debug "Sensor: Acceleration: " + pretty args
+      #debug "Sensor: Acceleration: " + pretty args
             
     sim.on 'see', (args) ->
       #debug "Sensor: Simplified vision"
@@ -158,117 +159,101 @@ module.exports = (options={}) ->
       buffer[20]  = mutable   0.8 * Math.random() + 0.5 * Math.cos t
       buffer[21]  = mutable   0.8 * Math.random() + 0.05 * Math.cos t
 
-    reproduce = (onComplete) -> process.nextTick ->
-      warn "reproducing"
-      clone 
-        src       : source
-        ratio     : 0.80 # Math.min 0.60, mutable 0.40
-        iterations:  2
-        onComplete: (src) ->
-          #debug "sending fork event: \"#{source}\""
-          emit fork: src: source
-          wait(1)(onComplete) if onComplete?
+    ################
+    # SELF-CLONING #
+    ################
+    after 3.sec -> clone 
+      src       : src
+      ratio     : mutable 0.002
+      iterations:  3
+      debug: no
+      onComplete: (new_src, nb_mutations) ->
+        success "cloned with #{nb_mutations} mutations"
+        if nb_mutations
+          emit cmd: 'fork', src: new_src
+        process.exit()
 
-    exit = (code=0) -> process.nextTick ->
-      warn 'exiting..'
-      #simspark.close()
-      emit die: code
-      wait(300) -> process.exit code
 
     #############
     # MAIN LOOP #
     #############
-
-    step = 0
     do iterate = ->
 
       # http://simspark.sourceforge.net/wiki/index.php/Play_Modes
   
-      switch playmode
-        when 'BeforeKickOff'
-          debug "Before Kick Off"
-          warn "scene ready! waiting for kick off.."
+      # debug all msg?
+      if no
+        switch playmode
+          when 'BeforeKickOff'
+            debug "Before Kick Off"
+            #warn "Waiting for kick off.."
 
-        when 'KickOff_Left'
-          debug "Kick Off Left"
+          when 'KickOff_Left'
+            debug "Kick Off Left"
 
-        when 'KickOff_Right'
-          debug "Kick Off Right"
+          when 'KickOff_Right'
+            debug "Kick Off Right"
 
-        when 'PlayOn'
-          debug "Play On"
+          when 'PlayOn'
+            debug "Play On"
 
-        when 'KickIn_Left'
-          debug "Kick In Left"
+          when 'KickIn_Left'
+            debug "Kick In Left"
 
-        when 'KickIn_Right'
-          debug "Kick In Right"
+          when 'KickIn_Right'
+            debug "Kick In Right"
 
-        when 'corner_kick_left'
-          debug "Corner Kick Left"
+          when 'corner_kick_left'
+            debug "Corner Kick Left"
 
-        when 'corner_kick_right'
-          debug "Corner Kick Right"
+          when 'corner_kick_right'
+            debug "Corner Kick Right"
 
-        when 'goal_kick_left'
-          debug "Goal Kick Left"
+          when 'goal_kick_left'
+            debug "Goal Kick Left"
 
-        when 'goal_kick_right'
-          debug "Goal Kick Right"
+          when 'goal_kick_right'
+            debug "Goal Kick Right"
 
-        when 'offside_left'
-          debug "Offside Left"
+          when 'offside_left'
+            debug "Offside Left"
 
-        when 'offside_right'
-          debug "Offside Right"
+          when 'offside_right'
+            debug "Offside Right"
 
-        when 'GameOver'
-          debug "Game Over"
-          state = 'ended'
+          when 'GameOver'
+            debug "Game Over"
+            state = 'ended'
 
-        when 'Goal_Left'
-          debug "Goal Left"
+          when 'Goal_Left'
+            debug "Goal Left"
 
-        when 'Goal_Right'
-          debug "Goal Right"
+          when 'Goal_Right'
+            debug "Goal Right"
 
-        when 'free_kick_left'
-          debug "Free Kick Left"
+          when 'free_kick_left'
+            debug "Free Kick Left"
 
-        when 'free_kick_right'
-          debug "Free Kick Right"
+          when 'free_kick_right'
+            debug "Free Kick Right"
+
 
       switch state
         when 'play'
-          step++
           flushed = flush()
           #if flushed.length
           #  debug "flushed: " + pretty flushed
-
-          if step is 40
-            do reproduce
-
-          if step is 80
-            state = 'ended'
 
         when 'connecting'
           warn "connecting to the server.."
 
         when 'waiting'
-          debug "waiting for the scene to be installed.."
+          #debug "waiting.."
           if playmode is 'KickOff_Left' or playmode is 'PlayOn'
-            debug "we can play!"
+            success "we can play"
             state = 'play'
 
         when 'ended', 'disconnected'
-          if state is 'exit'
-            debug "exit in progress.."
-          else
-            if state is 'ended'
-              debug "simulation ended"
-            else
-              debug "we are disconnected"
-            state = 'exit'
-            do exit
+          process.exit()
       
-      after 500.ms iterate
+      after 150.ms iterate
